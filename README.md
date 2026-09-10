@@ -53,202 +53,177 @@ The current project focuses on a responsive web application for students, fresh 
 - **Maintainability:** The system should use modular and documented components.
 - **Reliability:** Invalid input and service failures should be handled gracefully.
 
-## System Diagrams
+# System Diagrams
 
-### 1. DFD – Level 0
+## 1. DFD – Level 0
 
 ```mermaid
-flowchart LR
-    S[Student / Job Seeker] -->|Profile & Assessment Data| P((CareerAI Process))
-    P -->|Career Recommendations, Skill Gaps & Resources| S
-    A[Administrator / Career Counsellor] -->|Career, Skill & Resource Updates| P
-    P -->|Read / Update Reference Data| D[(Career / Skill / Learning Resource Data)]
-    D -->|Reference Data| P
+graph LR
+    U[Student / Job Seeker] -->|Profile and assessment data| C[CareerAI System]
+    C -->|Recommendations and skill gaps| U
+    A[Admin / Counsellor] -->|Career and resource updates| C
+    C -->|Reference data| D[(Career and Skill Database)]
+    D -->|Career and skill data| C
 ```
 
-### 2. UML Use Case Diagram
+## 2. UML Use Case Diagram
 
 ```mermaid
-flowchart LR
+graph LR
     Student[Student / Learner]
     Admin[Administrator]
-    Counselor[Career Counsellor]
-    Market[Job Market Data Feed]
+    Counsellor[Career Counsellor]
 
-    subgraph System[AI Career Guidance & Skill Recommendation System]
-        A((Take Skill Assessment))
-        B((View Career Recommendations))
-        C((Enroll in Learning Resource))
-        D((Track Learning Progress))
-        E((Manage Career Paths))
-        F((Configure Recommendation Rules))
-        G((View Analytics Dashboard))
-        H((Analyze Skill Profile))
-        I((Match Career Paths))
+    subgraph CareerAI
+        UC1((Register / Login))
+        UC2((Manage Profile))
+        UC3((Take Assessment))
+        UC4((View Career Recommendations))
+        UC5((View Skill Gaps))
+        UC6((View Learning Resources))
+        UC7((Track Progress))
+        UC8((Manage Career Data))
     end
 
-    Student --> A
-    Student --> B
-    Student --> C
-    Student --> D
-    Counselor --> D
-    Admin --> E
-    Admin --> F
-    Market --> G
-    A -.->|include| H
-    B -.->|include| I
+    Student --> UC1
+    Student --> UC2
+    Student --> UC3
+    Student --> UC4
+    Student --> UC5
+    Student --> UC6
+    Student --> UC7
+    Admin --> UC8
+    Counsellor --> UC7
 ```
 
-### 3. UML Class Diagram
+## 3. UML Class Diagram
 
 ```mermaid
 classDiagram
     class User {
-      UUID userId
-      String name
-      String email
-      List~Skill~ skills
-      register()
-      login()
-    }
-    class SkillAssessment {
-      UUID assessmentId
-      UUID userId
-      Map responses
-      DateTime completedAt
-      submit()
+        +userId
+        +name
+        +email
+        +register()
+        +login()
     }
     class Skill {
-      UUID skillId
-      String name
-      Enum level
+        +skillId
+        +name
+        +level
+    }
+    class SkillAssessment {
+        +assessmentId
+        +responses
+        +completedAt
+        +submit()
     }
     class CareerPath {
-      UUID pathId
-      String title
-      List~Skill~ requiredSkills
-      Decimal avgSalary
-    }
-    class Feedback {
-      UUID feedbackId
-      UUID userId
-      Int rating
-      String comments
-    }
-    class RecommendationEngine {
-      matchSkills()
-      rankCareerPaths()
-      generateRecommendations()
+        +pathId
+        +title
+        +requiredSkills
     }
     class LearningResource {
-      UUID resourceId
-      String title
-      String provider
-      String skillTag
-      String url
+        +resourceId
+        +title
+        +provider
+        +url
+    }
+    class RecommendationEngine {
+        +matchSkills()
+        +rankCareerPaths()
+        +generateRecommendations()
+    }
+    class Feedback {
+        +feedbackId
+        +rating
+        +comments
     }
 
-    User "1" --> "1..*" SkillAssessment : takes
-    SkillAssessment "*" --> "*" Skill : uses
-    CareerPath "1" --> "*" Skill : requires
-    User --> Feedback : writes
-    Feedback --> RecommendationEngine : rates
+    User "1" --> "many" Skill : has
+    User "1" --> "many" SkillAssessment : takes
+    SkillAssessment "many" --> "many" Skill : evaluates
+    CareerPath "1" --> "many" Skill : requires
     User --> RecommendationEngine : requests
-    SkillAssessment --> RecommendationEngine : feeds
-    RecommendationEngine --> CareerPath : matches
+    RecommendationEngine --> CareerPath : recommends
     RecommendationEngine --> LearningResource : recommends
+    User --> Feedback : submits
 ```
 
-### 4. UML Sequence Diagram
+## 4. UML Sequence Diagram
 
 ```mermaid
 sequenceDiagram
     actor Student
-    participant Client as Client App
-    participant API as API Gateway
+    participant Client
+    participant API
     participant Engine as Recommendation Engine
-    participant DB as Career / Skill DB
-    participant Notify as Notification Service
+    participant DB as Career Database
 
-    Student->>Client: Submit assessment answers
-    Client->>API: POST /assessment
+    Student->>Client: Submit assessment
+    Client->>API: Send assessment data
     API->>Engine: Analyze skills
     Engine->>DB: Fetch career paths
-    DB-->>Engine: Matching career data
+    DB-->>Engine: Career data
     Engine-->>API: Ranked recommendations
     API-->>Client: Recommendation response
     Client-->>Student: Display results
-    Engine->>Notify: Emit recommendation.ready event
-
-    Note over API,Engine: If assessment data is incomplete,
-a validation error requests additional responses.
 ```
 
-### 5. UML Activity Diagram
+## 5. UML Activity Diagram
 
 ```mermaid
 flowchart TD
-    Start([Receive Assessment Submission]) --> V[Validate Responses]
-    V --> C[Compute Skill Profile]
-    C --> M[Run Matching Algorithm]
-    M --> Q{Match Quality?}
-    Q -->|Strong| S[Generate Top Recommendations]
-    Q -->|Moderate| R[Generate Recommendations + Resources]
-    Q -->|Weak| W[Request Additional Assessment]
-    S --> End([Deliver Results to Student])
-    R --> End
-    W --> End
+    Start([Start]) --> A[Submit Assessment]
+    A --> B[Validate Responses]
+    B --> C[Analyze Skills]
+    C --> D[Match Career Paths]
+    D --> E{Match Found?}
+    E -->|Yes| F[Generate Recommendations]
+    E -->|No| G[Request More Information]
+    F --> H[Show Career and Skill Gap Results]
+    G --> A
+    H --> End([End])
 ```
 
-### 6. UML State Machine Diagram
+## 6. UML State Machine Diagram
 
 ```mermaid
 stateDiagram-v2
-    [*] --> CREATED
-    CREATED --> ANALYZING : valid
-    ANALYZING --> GENERATED : rank
-    ANALYZING --> FAILED : error
-    GENERATED --> DELIVERED : deliver
-    DELIVERED --> VIEWED : open
-    DELIVERED --> DISMISSED : dismiss
-    VIEWED --> ACCEPTED : accept
-    GENERATED --> EXPIRED : timeout
-    DISMISSED --> [*]
-    FAILED --> [*]
-    EXPIRED --> [*]
-    ACCEPTED --> [*]
+    [*] --> Created
+    Created --> Analyzing : valid submission
+    Analyzing --> Generated : recommendation ready
+    Analyzing --> Failed : error
+    Generated --> Delivered : deliver result
+    Delivered --> Viewed : user opens result
+    Delivered --> Dismissed : user dismisses result
+    Viewed --> Accepted : user accepts
+    Dismissed --> [*]
+    Accepted --> [*]
+    Failed --> [*]
 ```
 
-### 7. UML Component Diagram
+## 7. UML Component Diagram
 
 ```mermaid
-flowchart LR
-    Client[Student / Counselor Client] --> Dashboard[Web Dashboard]
-    Dashboard --> API[Recommendation API]
+graph LR
+    Client[Client / Browser] --> Web[Web Interface]
+    Web --> API[Recommendation API]
     API --> Engine[Recommendation Engine]
     API --> Notify[Notification Service]
-    Engine --> DB[(PostgreSQL)]
-    Engine --> Cache[(Redis / Cache)]
-    API --> Audit[Audit & Logging]
-    Market[Job Market Data Feed] --> API
+    Engine --> DB[(Database)]
+    API --> Log[Logging Service]
 ```
 
-### 8. UML Deployment Diagram
+## 8. UML Deployment Diagram
 
 ```mermaid
-flowchart TB
-    Device[Client Device\nBrowser / Mobile App]
-    Web[Web Server\nReact / Static Assets]
-    App[Application Server\nRecommendation API\nRecommendation Engine\nML Scoring Service]
-    DB[(PostgreSQL\nUsers, Skills, Paths)]
-    Redis[(Redis\nCache, Sessions)]
-    Ext[Simulated External Services\nJob Market API\nNotification Service]
-
-    Device -->|HTTPS| Web
-    Web -->|HTTPS| App
-    App -->|SQL| DB
-    App -->|Redis Protocol| Redis
-    App -->|API Calls / Events| Ext
+graph TB
+    Device[Client Device] --> Web[Web Server]
+    Web --> App[Application Server]
+    App --> DB[(Database Server)]
+    App --> Notify[Notification Service]
+    App --> Market[External Career Data]
 ```
 
 ## Rule Table / Decision Table
